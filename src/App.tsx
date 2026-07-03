@@ -1,12 +1,26 @@
-import { InfoAlert } from './components/custom/alertCustom'
+import { lazy, Suspense } from "react";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
 
-const App = () => {
+const HomePage = lazy(() => import("@/pages/HomePage"));
+const CloudAlertPage = lazy(() => import("@/pages/CloudAlertPage"));
+
+export default function App() {
+  const router = createBrowserRouter([
+    {
+      path: "/",
+      element: <HomePage />,
+    },
+    {
+      path: "/cloud-alerts",
+      element: <CloudAlertPage />,
+    },
+  ])
+  
   return (
-    <div className="w-full h-screen flex flex-col items-center justify-center bg-[#fffcf6]">
-      <h1 className='text-5xl text-black'>Hello, World!</h1>
-      <InfoAlert />
-    </div>
+    <Suspense fallback="Loading...">
+      <Toaster />
+      <RouterProvider router={router} />
+    </Suspense>
   )
 }
-
-export default App
