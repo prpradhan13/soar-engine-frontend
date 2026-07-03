@@ -38,17 +38,17 @@ const CloudAlertPage = () => {
   console.log("Current Cloud Alerts:", cloudAlerts);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200 p-6 font-sans">
+    <div className="min-h-screen bg-mainBG text-[#f8f9fa] p-6 font-sans">
       <div className="max-w-6xl mx-auto space-y-6">
         
         {/* Header Section */}
-        <header className="flex justify-between items-center pb-4 border-b border-slate-800">
+        <header className="flex justify-between items-center pb-4 border-b border-[#f8f9fa]/10">
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
               <Cloud className="text-blue-500" />
               Cloud Threat Intel
             </h1>
-            <p className="text-sm text-slate-400 mt-1">Live monitoring for Azure Infrastructure</p>
+            <p className="text-sm text-[#dee2e6] mt-1">Live monitoring for Azure Infrastructure</p>
           </div>
           <div className="flex items-center gap-2 bg-blue-500/10 text-blue-400 px-3 py-1.5 rounded-full text-sm font-medium border border-blue-500/20">
             <span className="relative flex h-2 w-2">
@@ -60,11 +60,11 @@ const CloudAlertPage = () => {
         </header>
 
         {/* Alerts Grid */}
-        <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-lg">
-          <div className="p-4 border-b border-slate-800 flex items-center gap-2 bg-slate-900/50">
+        <div className="bg-[#343a40] rounded-xl overflow-hidden shadow-lg">
+          <div className="p-4 flex items-center gap-2 bg-[#222222]">
             <Activity size={18} className="text-slate-400" />
-            <h2 className="font-semibold text-slate-200">Recent Cloud Ingestions</h2>
-            <span className="ml-auto text-xs bg-slate-800 px-2 py-1 rounded text-slate-400">
+            <h2 className="font-semibold">Recent Cloud Ingestions</h2>
+            <span className="ml-auto text-xs bg-secondaryBG px-2 py-1 rounded text-black">
               Total: {cloudAlerts.length}
             </span>
           </div>
@@ -73,8 +73,8 @@ const CloudAlertPage = () => {
             {isLoading ? (
               <div className="p-8 text-center text-slate-500">Loading secure logs...</div>
             ) : cloudAlerts.length === 0 ? (
-              <div className="p-8 text-center text-slate-500 flex flex-col items-center">
-                <Shield size={32} className="mb-2 opacity-20" />
+              <div className="p-8 text-center text-[#f8f9fa] flex flex-col items-center">
+                <Shield size={32} className="mb-2 opacity-30" />
                 No cloud alerts found.
               </div>
             ) : (

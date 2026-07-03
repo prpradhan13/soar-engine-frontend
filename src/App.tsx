@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
+import Loader from "@/components/loader";
 
 const HomePage = lazy(() => import("@/pages/HomePage"));
 const CloudAlertPage = lazy(() => import("@/pages/CloudAlertPage"));
@@ -18,7 +19,7 @@ export default function App() {
   ])
   
   return (
-    <Suspense fallback="Loading...">
+    <Suspense fallback={<Loader />}>
       <Toaster />
       <RouterProvider router={router} />
     </Suspense>

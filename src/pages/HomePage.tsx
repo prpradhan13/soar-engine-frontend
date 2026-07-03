@@ -69,15 +69,15 @@ const HomePage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200 p-6 font-sans">
+    <div className="min-h-screen bg-mainBG p-6 font-sans">
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header Section */}
-        <header className="flex justify-between items-center pb-4 border-b border-slate-800">
+        <header className="flex justify-between items-center pb-4 border-b border-[#f8f9fa]/10">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-white">
+            <h1 className="text-2xl font-bold tracking-tight text-[#f8f9fa]">
               SOAR Engine
             </h1>
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-[#ced4da]">
               Automated Threat Containment Dashboard
             </p>
           </div>
@@ -91,7 +91,7 @@ const HomePage = () => {
               Engine Active
             </div>
 
-            <button onClick={handleCloudAlertClick} className="cursor-pointer flex items-center gap-2 bg-emerald-500/10 text-emerald-400 px-3 py-1.5 rounded-full text-sm font-medium border border-emerald-500/20">
+            <button onClick={handleCloudAlertClick} className="cursor-pointer flex items-center gap-2 bg-[#f8f9fa] hover:bg-[#dee2e6] px-3 py-1.5 rounded-full text-sm font-medium border border-[#6c757d]">
               Cloud Alerts
             </button>
           </div>
@@ -99,35 +99,35 @@ const HomePage = () => {
 
         {/* Top Level Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl flex items-center gap-4">
+          <div className="bg-secondaryBG p-4 rounded-xl flex items-center gap-4">
             <div className="p-3 bg-red-500/10 text-red-500 rounded-lg">
               <ShieldAlert size={24} />
             </div>
             <div>
-              <p className="text-sm text-slate-400">Active Containments</p>
-              <p className="text-2xl font-bold text-white">
+              <p className="text-sm">Active Containments</p>
+              <p className="text-2xl font-bold">
                 {activeBlocks.length}
               </p>
             </div>
           </div>
 
-          <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl flex items-center gap-4">
+          <div className="bg-secondaryBG border border-slate-800 p-4 rounded-xl flex items-center gap-4">
             <div className="p-3 bg-blue-500/10 text-blue-500 rounded-lg">
               <Activity size={24} />
             </div>
             <div>
-              <p className="text-sm text-slate-400">Events Analyzed (24h)</p>
-              <p className="text-2xl font-bold text-white">1,248</p>
+              <p className="text-sm">Events Analyzed (24h)</p>
+              <p className="text-2xl font-bold">1,248</p>
             </div>
           </div>
 
-          <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl flex items-center gap-4">
+          <div className="bg-secondaryBG p-4 rounded-xl flex items-center gap-4">
             <div className="p-3 bg-purple-500/10 text-purple-500 rounded-lg">
               <BrainCircuit size={24} />
             </div>
             <div>
-              <p className="text-sm text-slate-400">AI Confidence Avg</p>
-              <p className="text-2xl font-bold text-white">94%</p>
+              <p className="text-sm">AI Confidence Avg</p>
+              <p className="text-2xl font-bold">94%</p>
             </div>
           </div>
         </div>
@@ -135,13 +135,13 @@ const HomePage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Column: Active Blocks */}
           <div className="lg:col-span-2 space-y-4">
-            <h2 className="text-lg font-semibold flex items-center gap-2">
-              <Shield size={18} className="text-slate-400" />
+            <h2 className="text-lg font-semibold flex items-center gap-2 text-[#f8f9fa]">
+              <Shield size={18} />
               Active Firewall Blocks
             </h2>
 
-            {activeBlocks.length === 0 ? (
-              <div className="bg-slate-900 border border-slate-800 rounded-xl p-8 text-center text-slate-400">
+            {activeBlocks.length !== 0 ? (
+              <div className="bg-[#343a40] rounded-xl p-8 text-center text-[#f8f9fa]">
                 <CheckCircle2
                   size={48}
                   className="mx-auto mb-3 text-emerald-500 opacity-50"
@@ -153,7 +153,7 @@ const HomePage = () => {
                 {activeBlocks.map((block) => (
                   <div
                     key={block.id}
-                    className="bg-slate-900 border border-red-500/30 rounded-xl p-4 flex flex-col sm:flex-row justify-between gap-4 transition-all hover:border-red-500/50 relative overflow-hidden"
+                    className="bg-[#343a40] rounded-xl p-4 flex flex-col sm:flex-row justify-between gap-4 transition-all hover:border-red-500/50 relative overflow-hidden"
                   >
                     <div className="absolute left-0 top-0 bottom-0 w-1 bg-red-500"></div>
                     <div>
@@ -164,7 +164,7 @@ const HomePage = () => {
                         <span className="text-xs bg-slate-800 text-slate-300 px-2 py-0.5 rounded font-mono">
                           Port {block.port}
                         </span>
-                        <span className="text-xs text-slate-500 flex items-center gap-1">
+                        <span className="text-xs text-[#f8f9fa] flex items-center gap-1">
                           <Clock size={12} /> {block.time}
                         </span>
                       </div>
@@ -176,7 +176,7 @@ const HomePage = () => {
                     <div className="flex items-center justify-end">
                       <button
                         onClick={() => handleUnblock(block.id, block.ip)}
-                        className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-lg text-sm font-medium transition-colors border border-slate-700 hover:border-slate-600"
+                        className="flex items-center gap-2 bg-secondaryBG hover:bg-[#ced4da] px-4 py-2 rounded-lg text-sm font-medium transition-colors border border-slate-700 hover:border-slate-600"
                       >
                         <Unlock size={16} />
                         Unblock IP
@@ -190,22 +190,22 @@ const HomePage = () => {
 
           {/* Side Column: Audit Log */}
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold flex items-center gap-2">
-              <Activity size={18} className="text-slate-400" />
+            <h2 className="text-lg font-semibold flex items-center gap-2 text-[#f8f9fa]">
+              <Activity size={18} />
               Live AI Audit Log
             </h2>
-            <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
-              <div className="divide-y divide-slate-800/50 max-h-125 overflow-y-auto">
+            <div className="bg-[#343a40] rounded-xl overflow-hidden">
+              <div className="divide-y divide-[#495057] max-h-125 overflow-y-auto">
                 {auditLogs.map((log) => (
                   <div
                     key={log.id}
-                    className="p-4 hover:bg-slate-800/30 transition-colors"
+                    className="p-4 hover:bg-[#495057] transition-colors"
                   >
                     <div className="flex justify-between items-start mb-2">
-                      <span className="font-mono text-sm text-slate-300">
+                      <span className="font-mono text-sm text-[#f8f9fa] font-semibold">
                         {log.ip}
                       </span>
-                      <span className="text-xs text-slate-500">{log.time}</span>
+                      <span className="text-xs text-[#f8f9fa]">{log.time}</span>
                     </div>
                     <div className="flex items-center gap-2 mb-2">
                       {log.decision === "BLOCK" ? (
@@ -213,15 +213,15 @@ const HomePage = () => {
                           <XCircle size={12} /> BLOCK
                         </span>
                       ) : (
-                        <span className="flex items-center gap-1 text-xs font-bold text-slate-400 bg-slate-800 px-2 py-0.5 rounded">
+                        <span className="flex items-center gap-1 text-xs font-bold bg-[#6c757d] text-mainBG px-2 py-0.5 rounded">
                           <CheckCircle2 size={12} /> IGNORE
                         </span>
                       )}
-                      <span className="text-xs text-slate-500 font-mono">
+                      <span className="text-xs text-[#adb5bd] font-mono">
                         {log.protocol}:{log.port}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-400 line-clamp-2">
+                    <p className="text-xs text-[#dee2e6] line-clamp-2">
                       {log.reason}
                     </p>
                   </div>
