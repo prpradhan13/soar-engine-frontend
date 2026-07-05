@@ -29,3 +29,13 @@ export type firewallIncidentType = {
   status: string;
   timestamp: string;
 };
+
+export type remediationType = {
+  _id: string;
+  ip_address: string;
+  action_type: "BLOCK" | "UNBLOCK";
+  target_table: string;
+  active: boolean;
+  incident_id: firewallIncidentType;
+  initiated_at: string;
+};

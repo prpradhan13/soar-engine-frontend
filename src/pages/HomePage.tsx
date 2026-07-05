@@ -10,24 +10,25 @@ import {
   Clock,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import type { firewallIncidentType } from "@/types";
-import { fetchFirewallLiveIncidentData } from "@/lib/utils";
+import type { firewallIncidentType, remediationType } from "@/types";
+import { fetchFirewallIncidentData, fetchLiveRemediationData } from "@/lib/utils";
 import { io } from "socket.io-client";
 
 const socket = io("http://localhost:8080");
 
 const HomePage = () => {
   const navigate = useNavigate();
-  const [activeBlocks, setActiveBlocks] = useState<firewallIncidentType[]>([]);
   const [incidentLogs, setIncidentLogs] = useState<firewallIncidentType[]>([]);
+  const [remediationLogs, setRemediationLogs] = useState<remediationType[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
-      const incidents = await fetchFirewallLiveIncidentData();
-      setActiveBlocks(
-        incidents.filter((incident) => incident.status === "BLOCK"),
-      );
+      const incidents = await fetchFirewallIncidentData();
+      const remediations = await fetchLiveRemediationData();
+      setRemediationLogs(remediations);
       setIncidentLogs(incidents);
+      setIsLoading(false);
     };
 
     fetchData();
@@ -40,14 +41,22 @@ const HomePage = () => {
       });
     });
 
+    socket.on("new_remediation", (remediationData) => {
+      setRemediationLogs((prevLogs) => {
+        const safePrev = Array.isArray(prevLogs) ? prevLogs : [];
+        return [remediationData, ...safePrev];
+      });
+    });
+
     // Cleanup listener on unmount
     return () => {
       socket.off("new_incident");
+      socket.off("new_remediation");
     };
   }, []);
 
   const handleUnblock = (id: string, ip: string) => {
-    setActiveBlocks(activeBlocks.filter((block) => block._id !== id));
+    setRemediationLogs(remediationLogs.filter((block) => block._id !== id));
     alert(`[MOCK API] Sent pfctl unlock command for ${ip}`);
   };
 
@@ -95,7 +104,7 @@ const HomePage = () => {
             </div>
             <div>
               <p className="text-sm">Active Containments</p>
-              <p className="text-2xl font-bold">{activeBlocks.length}</p>
+              <p className="text-2xl font-bold">{remediationLogs.length}</p>
             </div>
           </div>
 
@@ -128,7 +137,11 @@ const HomePage = () => {
               Active Firewall Blocks
             </h2>
 
-            {activeBlocks.length !== 0 ? (
+            {isLoading ? (
+               <div className="bg-slate-900 border border-slate-800 rounded-xl p-8 text-center text-slate-400">
+                  Loading secure logs...
+               </div>
+            ) : remediationLogs.length === 0 ? (
               <div className="bg-[#343a40] rounded-xl p-8 text-center text-[#f8f9fa]">
                 <CheckCircle2
                   size={48}
@@ -138,7 +151,7 @@ const HomePage = () => {
               </div>
             ) : (
               <div className="space-y-3">
-                {activeBlocks.map((block) => (
+                {remediationLogs.map((block) => (
                   <div
                     key={block._id}
                     className="bg-[#343a40] rounded-xl p-4 flex flex-col sm:flex-row justify-between gap-4 transition-all hover:border-red-500/50 relative overflow-hidden"
@@ -147,26 +160,26 @@ const HomePage = () => {
                     <div>
                       <div className="flex items-center gap-3 mb-1">
                         <span className="text-lg font-mono font-bold text-red-400">
-                          {block.src_ip}
+                          {block.ip_address}
                         </span>
                         <span className="text-xs bg-slate-800 text-slate-300 px-2 py-0.5 rounded font-mono">
-                          Port {block.dest_port}
+                          {block.active ? "Active" : "Inactive"}
                         </span>
                         <span className="text-xs text-[#f8f9fa] flex items-center gap-1">
                           <Clock size={12} />{" "}
-                          {block.timestamp
-                            ? new Date(block.timestamp).toLocaleTimeString()
+                          {block.initiated_at
+                            ? new Date(block.initiated_at).toLocaleTimeString()
                             : "Just now"}
                         </span>
                       </div>
-                      <p className="text-sm text-slate-300">{block.status}</p>
+                      <p className="text-sm text-slate-300">{block.action_type}</p>
                       <p className="text-xs text-purple-400 mt-2 font-medium">
-                        AI Confidence: %
+                        AI Confidence: {block.incident_id?.ai_analysis?.confidence || "Unknown"}%
                       </p>
                     </div>
                     <div className="flex items-center justify-end">
                       <button
-                        onClick={() => handleUnblock(block._id, block.src_ip)}
+                        onClick={() => handleUnblock(block._id, block.ip_address)}
                         className="flex items-center gap-2 bg-secondaryBG hover:bg-[#ced4da] px-4 py-2 rounded-lg text-sm font-medium transition-colors border border-slate-700 hover:border-slate-600"
                       >
                         <Unlock size={16} />
@@ -226,7 +239,7 @@ const HomePage = () => {
                         </span>
                       </div>
                       <p className="text-xs text-[#dee2e6] line-clamp-2">
-                        {log.ai_analysis.reason}
+                        {log.ai_analysis.reason || 'Automated volumetric flood detection.'}
                       </p>
                     </div>
                   ))
