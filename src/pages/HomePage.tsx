@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Shield,
   ShieldAlert,
@@ -10,57 +10,44 @@ import {
   Clock,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import type { firewallIncidentType } from "@/types";
+import { fetchFirewallLiveIncidentData } from "@/lib/utils";
+import { io } from "socket.io-client";
+
+const socket = io("http://localhost:8080");
 
 const HomePage = () => {
-    const navigate = useNavigate();
-  const [activeBlocks, setActiveBlocks] = useState([
-    {
-      id: "1",
-      ip: "192.168.2.10",
-      port: "445",
-      time: "2 mins ago",
-      reason:
-        "Unauthorized SMB probe indicating potential ransomware reconnaissance.",
-      confidence: 95,
-    },
-  ]);
+  const navigate = useNavigate();
+  const [activeBlocks, setActiveBlocks] = useState<firewallIncidentType[]>([]);
+  const [incidentLogs, setIncidentLogs] = useState<firewallIncidentType[]>([]);
 
-  const [auditLogs] = useState([
-    {
-      id: "101",
-      ip: "192.168.2.10",
-      protocol: "TCP",
-      port: "445",
-      decision: "BLOCK",
-      reason:
-        "Unauthorized SMB probe indicating potential ransomware reconnaissance.",
-      time: "11:08 AM",
-    },
-    {
-      id: "102",
-      ip: "192.168.2.10",
-      protocol: "ICMP",
-      port: "Any",
-      decision: "IGNORE",
-      reason:
-        "ICMP traffic is standard background noise. Throttled 19 duplicate logs.",
-      time: "11:05 AM",
-    },
-    {
-      id: "103",
-      ip: "34.107.221.82",
-      protocol: "TCP",
-      port: "80",
-      decision: "IGNORE",
-      reason:
-        "External web crawler signature detected. Dropped by default WAN rules.",
-      time: "10:42 AM",
-    },
-  ]);
+  useEffect(() => {
+    const fetchData = async () => {
+      const incidents = await fetchFirewallLiveIncidentData();
+      setActiveBlocks(
+        incidents.filter((incident) => incident.status === "BLOCK"),
+      );
+      setIncidentLogs(incidents);
+    };
+
+    fetchData();
+
+    // Listen for new firewall incidents via WebSocket
+    socket.on("new_incident", (incidentData) => {
+      setIncidentLogs((prevLogs) => {
+        const safePrev = Array.isArray(prevLogs) ? prevLogs : [];
+        return [incidentData, ...safePrev];
+      });
+    });
+
+    // Cleanup listener on unmount
+    return () => {
+      socket.off("new_incident");
+    };
+  }, []);
 
   const handleUnblock = (id: string, ip: string) => {
-    // In your real app, this will call: POST /api/firewall/unblock { ip }
-    setActiveBlocks(activeBlocks.filter((block) => block.id !== id));
+    setActiveBlocks(activeBlocks.filter((block) => block._id !== id));
     alert(`[MOCK API] Sent pfctl unlock command for ${ip}`);
   };
 
@@ -91,7 +78,10 @@ const HomePage = () => {
               Engine Active
             </div>
 
-            <button onClick={handleCloudAlertClick} className="cursor-pointer flex items-center gap-2 bg-[#f8f9fa] hover:bg-[#dee2e6] px-3 py-1.5 rounded-full text-sm font-medium border border-[#6c757d]">
+            <button
+              onClick={handleCloudAlertClick}
+              className="cursor-pointer flex items-center gap-2 bg-[#f8f9fa] hover:bg-[#dee2e6] px-3 py-1.5 rounded-full text-sm font-medium border border-[#6c757d]"
+            >
               Cloud Alerts
             </button>
           </div>
@@ -105,9 +95,7 @@ const HomePage = () => {
             </div>
             <div>
               <p className="text-sm">Active Containments</p>
-              <p className="text-2xl font-bold">
-                {activeBlocks.length}
-              </p>
+              <p className="text-2xl font-bold">{activeBlocks.length}</p>
             </div>
           </div>
 
@@ -152,30 +140,33 @@ const HomePage = () => {
               <div className="space-y-3">
                 {activeBlocks.map((block) => (
                   <div
-                    key={block.id}
+                    key={block._id}
                     className="bg-[#343a40] rounded-xl p-4 flex flex-col sm:flex-row justify-between gap-4 transition-all hover:border-red-500/50 relative overflow-hidden"
                   >
                     <div className="absolute left-0 top-0 bottom-0 w-1 bg-red-500"></div>
                     <div>
                       <div className="flex items-center gap-3 mb-1">
                         <span className="text-lg font-mono font-bold text-red-400">
-                          {block.ip}
+                          {block.src_ip}
                         </span>
                         <span className="text-xs bg-slate-800 text-slate-300 px-2 py-0.5 rounded font-mono">
-                          Port {block.port}
+                          Port {block.dest_port}
                         </span>
                         <span className="text-xs text-[#f8f9fa] flex items-center gap-1">
-                          <Clock size={12} /> {block.time}
+                          <Clock size={12} />{" "}
+                          {block.timestamp
+                            ? new Date(block.timestamp).toLocaleTimeString()
+                            : "Just now"}
                         </span>
                       </div>
-                      <p className="text-sm text-slate-300">{block.reason}</p>
+                      <p className="text-sm text-slate-300">{block.status}</p>
                       <p className="text-xs text-purple-400 mt-2 font-medium">
-                        AI Confidence: {block.confidence}%
+                        AI Confidence: %
                       </p>
                     </div>
                     <div className="flex items-center justify-end">
                       <button
-                        onClick={() => handleUnblock(block.id, block.ip)}
+                        onClick={() => handleUnblock(block._id, block.src_ip)}
                         className="flex items-center gap-2 bg-secondaryBG hover:bg-[#ced4da] px-4 py-2 rounded-lg text-sm font-medium transition-colors border border-slate-700 hover:border-slate-600"
                       >
                         <Unlock size={16} />
@@ -196,36 +187,50 @@ const HomePage = () => {
             </h2>
             <div className="bg-[#343a40] rounded-xl overflow-hidden">
               <div className="divide-y divide-[#495057] max-h-125 overflow-y-auto">
-                {auditLogs.map((log) => (
-                  <div
-                    key={log.id}
-                    className="p-4 hover:bg-[#495057] transition-colors"
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <span className="font-mono text-sm text-[#f8f9fa] font-semibold">
-                        {log.ip}
-                      </span>
-                      <span className="text-xs text-[#f8f9fa]">{log.time}</span>
-                    </div>
-                    <div className="flex items-center gap-2 mb-2">
-                      {log.decision === "BLOCK" ? (
-                        <span className="flex items-center gap-1 text-xs font-bold text-red-400 bg-red-400/10 px-2 py-0.5 rounded">
-                          <XCircle size={12} /> BLOCK
-                        </span>
-                      ) : (
-                        <span className="flex items-center gap-1 text-xs font-bold bg-[#6c757d] text-mainBG px-2 py-0.5 rounded">
-                          <CheckCircle2 size={12} /> IGNORE
-                        </span>
-                      )}
-                      <span className="text-xs text-[#adb5bd] font-mono">
-                        {log.protocol}:{log.port}
-                      </span>
-                    </div>
-                    <p className="text-xs text-[#dee2e6] line-clamp-2">
-                      {log.reason}
-                    </p>
+                {incidentLogs.length === 0 ? (
+                  <div className="p-4 text-center text-[#f8f9fa]">
+                    No incidents logged yet.
                   </div>
-                ))}
+                ) : (
+                  incidentLogs.map((log) => (
+                    <div
+                      key={log._id}
+                      className="p-4 hover:bg-[#495057] transition-colors"
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <span className="font-mono text-sm text-[#f8f9fa] font-semibold">
+                          {log.src_ip}
+                        </span>
+                        <span className="text-xs text-[#f8f9fa]">
+                          {log.timestamp
+                            ? new Date(log.timestamp).toLocaleDateString()
+                            : "Just now"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 mb-2">
+                        {log.ai_analysis.action === "BLOCK" ? (
+                          <span className="flex items-center gap-1 text-xs font-bold text-red-400 bg-red-400/10 px-2 py-0.5 rounded">
+                            <XCircle size={12} /> BLOCK
+                          </span>
+                        ) : log.ai_analysis.action === "IGNORE" ? (
+                          <span className="flex items-center gap-1 text-xs font-bold bg-[#6c757d] text-mainBG px-2 py-0.5 rounded">
+                            <CheckCircle2 size={12} /> IGNORE
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1 text-xs font-bold bg-[#6c757d] text-mainBG px-2 py-0.5 rounded">
+                            <CheckCircle2 size={12} /> UNKNOWN
+                          </span>
+                        )}
+                        <span className="text-xs text-[#adb5bd] font-mono">
+                          {log.protocol}:{log.dest_port}
+                        </span>
+                      </div>
+                      <p className="text-xs text-[#dee2e6] line-clamp-2">
+                        {log.ai_analysis.reason}
+                      </p>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>
